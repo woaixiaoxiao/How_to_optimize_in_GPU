@@ -3,8 +3,12 @@ project(testdebug VERSION 0.1.0 LANGUAGES CUDA CXX C)
 
 find_package(CUDAToolkit)
 
-
 set(CMAKE_CUDA_STANDARD 11)
+
+# 设置默认的 CUDA 架构
+set(CMAKE_CUDA_ARCHITECTURES 86)  # 这里选择 70 代表 Volta 架构，可以根据需要更改
+
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
 
 file(GLOB CU_FILES "*.cu")
 foreach(CU_FILE ${CU_FILES})
@@ -14,22 +18,21 @@ foreach(CU_FILE ${CU_FILES})
     # 创建对应的可执行文件
     add_executable(${FILE_NAME} ${CU_FILE})
     
-    # 链接 CUDA 库
-    target_link_libraries(${FILE_NAME} PRIVATE CUDA::cudart)
+    # 链接 CUDA CUBLAS 库
+    target_link_libraries(${FILE_NAME} PRIVATE CUDA::cudart -lcublas -lcurand)
+
+    target_compile_options(${FILE_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-O3>)
     
-    # 如果是 Debug 模式，添加 -G 编译选项
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_compile_options(${FILE_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G>)
-    endif()
+    # # 如果是 Debug 模式，添加 -G 编译选项
+    # if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    #     target_compile_options(${FILE_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G>)
+    # endif()
+    
+    # # 如果是 Release 模式，添加 -O2 编译选项
+    # if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    #     target_compile_options(${FILE_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-O3>)
+    # endif()
     
     # 设置 CUDA 可分离编译属性
     set_target_properties(${FILE_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endforeach()
-
-
-# add_executable(testdebug hello.cu)
-# target_link_libraries(testdebug PRIVATE CUDA::cudart)
-# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     target_compile_options(testdebug PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G>)
-# endif()
-# set_target_properties(testdebug PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

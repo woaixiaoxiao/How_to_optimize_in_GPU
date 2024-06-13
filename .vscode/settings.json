@@ -1,6 +1,10 @@
 {
-    "C_Cpp.intelliSenseEngine": "disabled",
+    "C_Cpp.intelliSenseEngine": "default",
     "clangd.arguments": [
         "--header-insertion=never",
-    ]
+    ],
+    "cmake.debugConfig": {
+        "miDebuggerPath": "/usr/local/cuda/bin/cuda-gdb"
+    },
+    "git.terminalAuthentication": false
 }
