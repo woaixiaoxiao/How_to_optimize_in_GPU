@@ -6,5 +6,8 @@
     "cmake.debugConfig": {
         "miDebuggerPath": "/usr/local/cuda/bin/cuda-gdb"
     },
-    "git.terminalAuthentication": false
+    "git.terminalAuthentication": false,
+    "files.associations": {
+        "cmath": "cpp"
+    }
 }

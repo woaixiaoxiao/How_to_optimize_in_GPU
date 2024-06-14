@@ -1,23 +1,17 @@
 #include <iostream>
 #include <cuda_runtime.h>
 
+__global__ void test()
+{
+    int tid = threadIdx.x;
+    auto test_lambda = [&] __device__() { printf("%d\n", tid); };
+    test_lambda();
+}
+
 int main()
 {
-    int deviceCount;
-    cudaGetDeviceCount(&deviceCount);
-
-    for (int device = 0; device < deviceCount; ++device) {
-        cudaDeviceProp deviceProp;
-        cudaGetDeviceProperties(&deviceProp, device);
-
-        std::cout << "Device " << device << ": " << deviceProp.name << std::endl;
-        std::cout << "  Compute Capability: " << deviceProp.major << "." << deviceProp.minor
-                  << std::endl;
-        std::cout << "  Total Global Memory: " << deviceProp.totalGlobalMem / (1024 * 1024) << " MB"
-                  << std::endl;
-        std::cout << "  Multiprocessors: " << deviceProp.multiProcessorCount << std::endl;
-        std::cout << std::endl;
-    }
+    test<<<1, 1>>>();
+    cudaDeviceSynchronize();
 
     return 0;
 }

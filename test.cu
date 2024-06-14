@@ -297,6 +297,10 @@ int main(int argc, char** argv)
     size_t M = atoi(argv[1]);
     size_t K = atoi(argv[2]);
     size_t N = atoi(argv[3]);
+    // constexpr size_t LENGTH = 128;
+    // size_t M = LENGTH;
+    // size_t K = LENGTH;
+    // size_t N = LENGTH;
 
     assert(M % 8 == 0);
     assert(N % 8 == 0);
@@ -339,6 +343,8 @@ int main(int argc, char** argv)
         h_B[i] = i % 13;
     }
 
+
+
     checkCudaErrors(cudaMemcpy(d_A, h_A, bytes_A, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(d_B, h_B, bytes_B, cudaMemcpyHostToDevice));
 
@@ -346,7 +352,7 @@ int main(int argc, char** argv)
     checkCudaErrors(cudaEventCreate(&start));
     checkCudaErrors(cudaEventCreate(&stop));
     float msecTotal = 0;
-    int nIter = 1;
+    int nIter = 1000;
 
     checkCudaErrors(cudaMemcpy(d_C, h_C, bytes_C, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaEventRecord(start));
@@ -359,7 +365,6 @@ int main(int argc, char** argv)
               THREAD_SIZE_Y,
               THREAD_SIZE_X,
               ENABLE_DOUBLE_BUFFER><<<dimGrid, dimBlock>>>(d_A, d_B, d_C, M, N, K);
-        cudaDeviceSynchronize();
     }
     checkCudaErrors(cudaEventRecord(stop));
     checkCudaErrors(cudaEventSynchronize(stop));
@@ -385,7 +390,7 @@ int main(int argc, char** argv)
     checkCudaErrors(cudaEventRecord(start));
     for (int run = 0; run < nIter; run++) {
         cublasSgemm(
-            blas_handle, CUBLAS_OP_T, CUBLAS_OP_T, M, N, K, &alpha, d_A, K, d_B, N, &beta, d_C, N);
+            blas_handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, d_B, N, d_A, K, &beta, d_C, N);
     }
     checkCudaErrors(cudaEventRecord(stop));
     checkCudaErrors(cudaEventSynchronize(stop));
@@ -405,10 +410,12 @@ int main(int argc, char** argv)
 
     double eps = 1.e-6;   // machine zero
     bool correct = true;
+
     for (size_t i = 0; i < M * N; i++) {
         int row = i / N;
         int col = i % N;
-        double abs_err = fabs(h_C[i] - h_C1[col * M + row]);
+        double abs_err = fabs(h_C[i] - h_C1[i]);
+        // double abs_err = fabs(h_C[i] - h_C1[col * M + row]);
         double dot_length = M;
         double abs_val = fabs(h_C[i]);
         double rel_err = abs_err / abs_val / dot_length;
@@ -420,12 +427,12 @@ int main(int argc, char** argv)
                    h_C1[col * M + row],
                    eps);
             correct = false;
-            break;
+            if (i > 20) {
+                break;
+            }
         }
     }
 
-    // print44(h_A, K);
-    // print44(h_B, N);
 
     printf("%s\n", correct ? "Result= PASS" : "Result= FAIL");
     printf("ratio= %f\n", gigaFlops[0] / gigaFlops[1]);
