@@ -54,7 +54,7 @@ __global__ void Sgemm(float* __restrict__ A, float* __restrict__ B, float* __res
     __shared__ float As[2][BLOCK_SIZE_K][BLOCK_SIZE_M];
     __shared__ float Bs[2][BLOCK_SIZE_K][BLOCK_SIZE_N];
     // registers for C
-    float accum[THREAD_SIZE_Y][THREAD_SIZE_X];
+    __align__(16) float accum[THREAD_SIZE_Y][THREAD_SIZE_X];
 #pragma unroll
     for (int i = 0; i < THREAD_SIZE_Y; i++) {
 #pragma unroll
@@ -277,6 +277,17 @@ __global__ void Sgemm(float* __restrict__ A, float* __restrict__ B, float* __res
     }
 }
 
+void print44(float* a, int N)
+{
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            printf("%.8f ", a[i * N + j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
 int main(int argc, char** argv)
 {
     if (argc != 4) {
@@ -319,12 +330,12 @@ int main(int argc, char** argv)
     const bool ENABLE_DOUBLE_BUFFER = false;
 
     // 生成A的数据
-    for (int i = 0; i < M * K; i++) {
+    for (size_t i = 0; i < M * K; i++) {
         h_A[i] = i / 13;
     }
 
     // 生成B的数据
-    for (int i = 0; i < K * N; i++) {
+    for (size_t i = 0; i < K * N; i++) {
         h_B[i] = i % 13;
     }
 
@@ -335,7 +346,7 @@ int main(int argc, char** argv)
     checkCudaErrors(cudaEventCreate(&start));
     checkCudaErrors(cudaEventCreate(&stop));
     float msecTotal = 0;
-    int nIter = 1000;
+    int nIter = 1;
 
     checkCudaErrors(cudaMemcpy(d_C, h_C, bytes_C, cudaMemcpyHostToDevice));
     checkCudaErrors(cudaEventRecord(start));
@@ -348,6 +359,7 @@ int main(int argc, char** argv)
               THREAD_SIZE_Y,
               THREAD_SIZE_X,
               ENABLE_DOUBLE_BUFFER><<<dimGrid, dimBlock>>>(d_A, d_B, d_C, M, N, K);
+        cudaDeviceSynchronize();
     }
     checkCudaErrors(cudaEventRecord(stop));
     checkCudaErrors(cudaEventSynchronize(stop));
@@ -393,7 +405,7 @@ int main(int argc, char** argv)
 
     double eps = 1.e-6;   // machine zero
     bool correct = true;
-    for (int i = 0; i < M * N; i++) {
+    for (size_t i = 0; i < M * N; i++) {
         int row = i / N;
         int col = i % N;
         double abs_err = fabs(h_C[i] - h_C1[col * M + row]);
@@ -411,6 +423,9 @@ int main(int argc, char** argv)
             break;
         }
     }
+
+    // print44(h_A, K);
+    // print44(h_B, N);
 
     printf("%s\n", correct ? "Result= PASS" : "Result= FAIL");
     printf("ratio= %f\n", gigaFlops[0] / gigaFlops[1]);

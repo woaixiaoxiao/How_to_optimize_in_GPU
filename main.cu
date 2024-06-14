@@ -323,12 +323,6 @@ int main(int argc, char** argv)
 
     double eps = 1.e-6;   // machine zero
     bool correct = true;
-    // for(int i=0;i<20;i++){
-    //     for(int j=0;j<20;j++){
-    //         printf("%.8f ",h_C[i*N+j]);
-    //     }
-    //     printf("\n");
-    // }
 
     for (size_t i = 0; i < M * N; i++) {
         int row = i / N;

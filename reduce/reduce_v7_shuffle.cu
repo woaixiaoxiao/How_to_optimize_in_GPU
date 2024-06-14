@@ -25,7 +25,7 @@ __global__ void reduce7(float *d_in,float *d_out, unsigned int n){
     // each thread loads one element from global to shared mem
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * (blockSize * NUM_PER_THREAD) + threadIdx.x;
-
+    
     #pragma unroll
     for(int iter=0; iter<NUM_PER_THREAD; iter++){
         sum += d_in[i+iter*blockSize];
